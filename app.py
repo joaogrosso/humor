@@ -1,5 +1,6 @@
 """Diário de humor — uma nota por dia para cada área da vida."""
 
+import hmac
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -27,6 +28,26 @@ PADRAO = {c: 5 for c in NOTAS} | {c: "Médio" for c in ESCALA_ROTULOS} | {
 }
 
 hoje = datetime.now(FUSO).date()
+
+# --------------------------------------------------------------------------
+# Senha: o repositório é público, então o app pede a senha definida em
+# st.secrets["senha_app"]. Sem ela configurada (uso local), não pede nada.
+# --------------------------------------------------------------------------
+
+try:
+    SENHA_APP = st.secrets.get("senha_app")
+except FileNotFoundError:
+    SENHA_APP = None
+
+if SENHA_APP and not st.session_state.get("autenticado"):
+    with st.form("login"):
+        senha = st.text_input("Senha", type="password")
+        if st.form_submit_button("Entrar", use_container_width=True):
+            if hmac.compare_digest(senha, SENHA_APP):
+                st.session_state["autenticado"] = True
+                st.rerun()
+            st.error("Senha incorreta.")
+    st.stop()
 
 # --------------------------------------------------------------------------
 # Estado: ao abrir (ou trocar de pessoa/dia) carrega o rascunho salvo no banco
