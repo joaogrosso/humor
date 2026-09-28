@@ -12,7 +12,7 @@ st.set_page_config(page_title="Humor", page_icon="🙂", layout="centered")
 
 FUSO = ZoneInfo("America/Sao_Paulo")  # o servidor (ex.: Streamlit Cloud) roda em UTC
 
-NOTAS = {"inicio": "Início", "fim": "Fim", "dia": "Dia"}
+NOTAS = {"sono": "Noite de Sono", "inicio": "Início", "fim": "Fim", "dia": "Dia"}
 ESCALA_ROTULOS = {
     "casamento": "Casamento",
     "trabalho": "Trabalho",

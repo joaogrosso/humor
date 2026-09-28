@@ -15,10 +15,10 @@ from pathlib import Path
 
 import pandas as pd
 import streamlit as st
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.engine import Engine, make_url
 
-CAMPOS_NOTA = ["inicio", "fim", "dia"]  # 0 a 10
+CAMPOS_NOTA = ["sono", "inicio", "fim", "dia"]  # 0 a 10
 CAMPOS_ESCALA = ["casamento", "trabalho", "espiritualidade", "tempo", "investimentos"]
 CAMPOS_BINARIOS = ["exercicio"]
 CAMPOS = CAMPOS_NOTA + CAMPOS_ESCALA + CAMPOS_BINARIOS
@@ -44,10 +44,10 @@ def _url_banco() -> str:
 @st.cache_resource(show_spinner=False)
 def engine() -> Engine:
     eng = create_engine(_url_banco(), pool_pre_ping=True)
-    colunas = ",\n".join(
-        [f"{c} INTEGER" for c in CAMPOS_NOTA]
-        + [f"{c} TEXT" for c in CAMPOS_ESCALA + CAMPOS_BINARIOS]
-    )
+    tipos = {c: "INTEGER" for c in CAMPOS_NOTA} | {
+        c: "TEXT" for c in CAMPOS_ESCALA + CAMPOS_BINARIOS
+    }
+    colunas = ",\n".join(f"{c} {tipo}" for c, tipo in tipos.items())
     with eng.begin() as conn:
         conn.execute(
             text(
@@ -63,6 +63,12 @@ def engine() -> Engine:
                 """
             )
         )
+        # Migração: campos criados depois da tabela (ex.: sono) entram como colunas novas,
+        # vazias nos dias já registrados.
+        existentes = {col["name"] for col in inspect(conn).get_columns("registros")}
+        for campo in CAMPOS:
+            if campo not in existentes:
+                conn.execute(text(f"ALTER TABLE registros ADD COLUMN {campo} {tipos[campo]}"))
         if eng.dialect.name == "postgresql":
             # Mesmo cuidado do dashboard financeiro: nada exposto pela API pública do Supabase.
             conn.execute(text("ALTER TABLE registros ENABLE ROW LEVEL SECURITY"))
