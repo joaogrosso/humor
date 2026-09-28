@@ -67,7 +67,11 @@ dia = st.date_input(
     "Dia", value=hoje, max_value=hoje, min_value=hoje - timedelta(days=30), format="DD/MM/YYYY"
 )
 
-if st.session_state.get("carregado") != (nome, dia):
+# Recarrega também se faltar algum campo na sessão — acontece quando um campo novo é
+# publicado com o app já aberto (sem isso a barra nova cairia no mínimo, 0).
+if st.session_state.get("carregado") != (nome, dia) or any(
+    c not in st.session_state for c in db.CAMPOS
+):
     salvo = db.carregar_dia(dia, nome) or {}
     for campo in db.CAMPOS:
         valor = salvo.get(campo)
