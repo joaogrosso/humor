@@ -1,0 +1,5 @@
+streamlit>=1.50,<2
+sqlalchemy>=2,<3
+psycopg[binary]>=3,<4
+pandas>=2,<4
+tzdata
